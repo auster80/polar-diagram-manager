@@ -108,8 +108,14 @@ function plotPolar() {
     polarData.forEach(rw=>{ if(rw[w]!=null){ theta.push(rw.angle); r.push(rw[w]); vmax=Math.max(vmax,rw[w]); } });
     return {type:'scatterpolar',theta,r,mode:'lines+markers',name:`${w}`,marker:{size:6}};
   });
+  // Display a semicircle rotated 90° counter-clockwise from the previous view so
+  // 0° is at the top, 90° to the right and 180° at the bottom
   Plotly.newPlot('polarChart', traces, {
-    polar:{ angularaxis:{ rotation:90, direction:'clockwise', range:[0,180] }, radialaxis:{ range:[0,vmax*1.1] } },
+    polar:{
+      angularaxis:{ rotation:90, direction:'clockwise', range:[0,180] },
+      radialaxis:{ range:[0,vmax*1.1] },
+      sector:[-90,90]
+    },
     showlegend:true
   });
 }
