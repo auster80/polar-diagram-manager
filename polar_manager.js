@@ -53,18 +53,32 @@ function updateCell(el) {
 let highlighted=false;
 function highlightPoint(angle,tws) {
   if(!window.Plotly) return;
-  const chart = document.getElementById('polarChart');
-  chart.data.forEach((trace,i)=>{
-    const sizes = trace.theta.map(a=>(a===angle && +trace.name===tws?14:6));
-    Plotly.restyle(chart, {'marker.size':[sizes]}, [i]);
-  });
+  const polar = document.getElementById('polarChart');
+  if(polar.data){
+    polar.data.forEach((trace,i)=>{
+      const sizes = trace.theta.map(a=>(a===angle && +trace.name===tws?14:6));
+      Plotly.restyle(polar, {'marker.size':[sizes]}, [i]);
+    });
+  }
+  const vmg = document.getElementById('vmgChart');
+  if(vmg.data){
+    vmg.data.forEach((trace,i)=>{
+      const sizes = trace.x.map(a=>(a===angle && +trace.name===tws?14:6));
+      Plotly.restyle(vmg, {'marker.size':[sizes]}, [i]);
+    });
+  }
   highlighted = true;
 }
 function clearHighlight() {
   if(!highlighted||!window.Plotly) return;
-  const chart = document.getElementById('polarChart');
-  chart.data.forEach((_,i)=>{
-    Plotly.restyle(chart, {'marker.size':[Array(chart.data[i].theta.length).fill(6)]}, [i]);
+  ['polarChart','vmgChart'].forEach(id=>{
+    const chart=document.getElementById(id);
+    if(chart.data){
+      chart.data.forEach((trace,i)=>{
+        const len = trace.theta ? trace.theta.length : trace.x.length;
+        Plotly.restyle(chart, {'marker.size':[Array(len).fill(6)]}, [i]);
+      });
+    }
   });
   highlighted=false;
 }
@@ -80,6 +94,12 @@ function plotPolar() {
   Plotly.newPlot('polarChart', traces, {
     polar:{ angularaxis:{ rotation:90, direction:'clockwise', range:[0,180] }, radialaxis:{ range:[0,vmax*1.1] } },
     showlegend:true
+  }).then(chart=>{
+    chart.on('plotly_hover', ev=>{
+      const pt=ev.points[0];
+      highlightPoint(pt.theta, +pt.data.name);
+    });
+    chart.on('plotly_unhover', clearHighlight);
   });
 }
 
@@ -90,7 +110,13 @@ function plotVMG() {
     const x=[], y=[]; polarData.forEach(rw=>{ if(rw[w]!=null){ x.push(rw.angle); y.push(rw[w]*Math.cos(rw.angle*Math.PI/180)); } });
     return {x,y,mode:'lines+markers',name:`${w}`,type:'scatter'};
   });
-  Plotly.newPlot('vmgChart', traces, { xaxis:{title:'TWA (°)'}, yaxis:{title:'VMG (kn)'} });
+  Plotly.newPlot('vmgChart', traces, { xaxis:{title:'TWA (°)'}, yaxis:{title:'VMG (kn)'} }).then(chart=>{
+    chart.on('plotly_hover', ev=>{
+      const pt=ev.points[0];
+      highlightPoint(pt.x, +pt.data.name);
+    });
+    chart.on('plotly_unhover', clearHighlight);
+  });
 }
 
 function interpolateEmpty() {
