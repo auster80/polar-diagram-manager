@@ -108,6 +108,8 @@ function plotPolar() {
     polarData.forEach(rw=>{ if(rw[w]!=null){ theta.push(rw.angle); r.push(rw[w]); vmax=Math.max(vmax,rw[w]); } });
     return {type:'scatterpolar',theta,r,mode:'lines+markers',name:`${w}`,marker:{size:6}};
   });
+  // Show polar data as a right-hand semicircle with 0° at the top
+  // and angles increasing clockwise (0°→top, 90°→right, 180°→bottom)
   Plotly.newPlot('polarChart', traces, {
     polar:{
       angularaxis:{ rotation:90, direction:'clockwise', range:[0,180] },
