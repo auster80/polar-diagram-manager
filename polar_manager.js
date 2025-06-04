@@ -114,7 +114,7 @@ function plotPolar() {
     polar:{
       angularaxis:{ rotation:90, direction:'clockwise', range:[0,180] },
       radialaxis:{ range:[0,vmax*1.1] },
-      sector:[0,180]
+      sector:[-90,90]
     },
     showlegend:true
   });
