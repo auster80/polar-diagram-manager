@@ -109,7 +109,11 @@ function plotPolar() {
     return {type:'scatterpolar',theta,r,mode:'lines+markers',name:`${w}`,marker:{size:6}};
   });
   Plotly.newPlot('polarChart', traces, {
-    polar:{ angularaxis:{ rotation:90, direction:'clockwise', range:[0,180] }, radialaxis:{ range:[0,vmax*1.1] } },
+    polar:{
+      angularaxis:{ rotation:90, direction:'clockwise', range:[0,180] },
+      radialaxis:{ range:[0,vmax*1.1] },
+      sector:[0,180]
+    },
     showlegend:true
   });
 }
