@@ -33,15 +33,29 @@ function renderTable() {
     html += `<td><input type="number" value="${row.angle}" data-idx="${i}" data-key="angle" class="cell"></td>`;
     tws.forEach(w=>{
       const v = row[w]!=null ? row[w] : '';
-      html += `<td><input type="number" step="0.01" value="${v}" data-idx="${i}" data-key="${w}" class="cell"></td>`;
+      html += `<td><input type="number" step="0.1" value="${v}" data-idx="${i}" data-key="${w}" class="cell"></td>`;
     });
     html += '</tr>';
   });
   tbl.innerHTML = html;
   document.querySelectorAll('.cell').forEach(el=>{
-    el.oninput = ()=>{ updateCell(el); plotPolar(); };
-    el.onmouseover = ()=>{ const idx=+el.dataset.idx, key=el.dataset.key; if(key!=='angle'){ highlightPoint(polarData[idx].angle, +key); } };
+    el.oninput = ()=>{
+      updateCell(el);
+      plotPolar();
+      plotVMG();
+      const idx = +el.dataset.idx, key = el.dataset.key;
+      if(key!=='angle'){ highlightPoint(polarData[idx].angle, +key); }
+    };
+    el.onmouseover = ()=>{
+      const idx=+el.dataset.idx, key=el.dataset.key;
+      if(key!=='angle'){ highlightPoint(polarData[idx].angle, +key); }
+    };
     el.onmouseout = clearHighlight;
+    el.onfocus = ()=>{
+      const idx=+el.dataset.idx, key=el.dataset.key;
+      if(key!=='angle'){ highlightPoint(polarData[idx].angle, +key); }
+    };
+    el.onblur = clearHighlight;
   });
 }
 
@@ -53,19 +67,36 @@ function updateCell(el) {
 let highlighted=false;
 function highlightPoint(angle,tws) {
   if(!window.Plotly) return;
-  const chart = document.getElementById('polarChart');
-  chart.data.forEach((trace,i)=>{
-    const sizes = trace.theta.map(a=>(a===angle && +trace.name===tws?14:6));
-    Plotly.restyle(chart, {'marker.size':[sizes]}, [i]);
-  });
+  const polar = document.getElementById('polarChart');
+  if(polar.data){
+    polar.data.forEach((trace,i)=>{
+      const sizes = trace.theta.map(a=>(a===angle && +trace.name===tws?14:6));
+      Plotly.restyle(polar, {'marker.size':[sizes]}, [i]);
+    });
+  }
+  const vmg = document.getElementById('vmgChart');
+  if(vmg.data){
+    vmg.data.forEach((trace,i)=>{
+      const sizes = trace.x.map(a=>(a===angle && +trace.name===tws?14:6));
+      Plotly.restyle(vmg, {'marker.size':[sizes]}, [i]);
+    });
+  }
   highlighted = true;
 }
 function clearHighlight() {
   if(!highlighted||!window.Plotly) return;
-  const chart = document.getElementById('polarChart');
-  chart.data.forEach((_,i)=>{
-    Plotly.restyle(chart, {'marker.size':[Array(chart.data[i].theta.length).fill(6)]}, [i]);
-  });
+  const polar = document.getElementById('polarChart');
+  if(polar.data){
+    polar.data.forEach((_,i)=>{
+      Plotly.restyle(polar, {'marker.size':[Array(polar.data[i].theta.length).fill(6)]}, [i]);
+    });
+  }
+  const vmg = document.getElementById('vmgChart');
+  if(vmg.data){
+    vmg.data.forEach((_,i)=>{
+      Plotly.restyle(vmg, {'marker.size':[Array(vmg.data[i].x.length).fill(6)]}, [i]);
+    });
+  }
   highlighted=false;
 }
 
