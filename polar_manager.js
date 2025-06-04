@@ -33,7 +33,7 @@ function renderTable() {
     html += `<td><input type="number" value="${row.angle}" data-idx="${i}" data-key="angle" class="cell"></td>`;
     tws.forEach(w=>{
       const v = row[w]!=null ? row[w] : '';
-      html += `<td><input type="number" step="0.01" value="${v}" data-idx="${i}" data-key="${w}" class="cell"></td>`;
+      html += `<td><input type="number" step="0.1" value="${v}" data-idx="${i}" data-key="${w}" class="cell"></td>`;
     });
     html += '</tr>';
   });
