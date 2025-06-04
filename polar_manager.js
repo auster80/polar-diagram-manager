@@ -27,7 +27,9 @@ function getTWS() {
 
 function renderTable() {
   const tws = getTWS(), tbl = document.getElementById('dataTable');
-  let html = '<tr><th>Angle (°)</th>' + tws.map(w=>`<th>${w} kt</th>`).join('') + '</tr>';
+  let html = '<tr><th>Angle (°)</th>' +
+              tws.map(w=>`<th>${w} kt</th>`).join('') +
+              '<th></th></tr>';
   polarData.forEach((row,i)=>{
     html += '<tr>';
     html += `<td><input type="number" value="${row.angle}" data-idx="${i}" data-key="angle" class="cell"></td>`;
@@ -35,6 +37,7 @@ function renderTable() {
       const v = row[w]!=null ? row[w] : '';
       html += `<td><input type="number" step="0.1" value="${v}" data-idx="${i}" data-key="${w}" class="cell"></td>`;
     });
+    html += `<td><button data-idx="${i}" class="addRow">+</button></td>`;
     html += '</tr>';
   });
   tbl.innerHTML = html;
@@ -57,6 +60,18 @@ function renderTable() {
     };
     el.onblur = clearHighlight;
   });
+  document.querySelectorAll('.addRow').forEach(btn=>{
+    btn.onclick = ()=>insertRowAfter(+btn.dataset.idx);
+  });
+}
+
+function insertRowAfter(idx){
+  const tws = getTWS();
+  const row = {angle:null};
+  tws.forEach(w=>{ row[w]=null; });
+  polarData.splice(idx+1,0,row);
+  renderTable();
+  plotPolar();
 }
 
 function updateCell(el) {
