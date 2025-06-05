@@ -43,6 +43,7 @@ function renderTable() {
       updateCell(el);
       plotPolar();
       plotVMG();
+      drawWindDiagram();
       const idx = +el.dataset.idx, key = el.dataset.key;
       if(key!=='angle'){ highlightPoint(polarData[idx].angle, +key); }
     };
@@ -153,22 +154,98 @@ function exportData() {
   a.href=url; a.download='polar_data.json'; a.click();
 }
 
+function speedAtAngleForTWS(angle, tws) {
+  const rows = polarData.slice().sort((a,b)=>a.angle-b.angle);
+  let lower=rows[0], upper=rows[rows.length-1];
+  for(let i=0;i<rows.length;i++){
+    if(rows[i].angle<=angle) lower=rows[i];
+    if(rows[i].angle>=angle){ upper=rows[i]; break; }
+  }
+  const v1=lower[tws], v2=upper[tws];
+  if(v1==null&&v2==null) return 0;
+  if(v1==null) return v2;
+  if(v2==null) return v1;
+  if(lower.angle===upper.angle) return v1;
+  const t=(angle-lower.angle)/(upper.angle-lower.angle);
+  return v1+(v2-v1)*t;
+}
+
+function getBoatSpeed(angle, tws) {
+  const twsVals=getTWS();
+  if(!twsVals.length) return 0;
+  let low=twsVals[0], high=twsVals[twsVals.length-1];
+  for(let i=0;i<twsVals.length;i++){
+    if(twsVals[i]<=tws) low=twsVals[i];
+    if(twsVals[i]>=tws){ high=twsVals[i]; break; }
+  }
+  if(low===high) return speedAtAngleForTWS(angle, low);
+  const s1=speedAtAngleForTWS(angle, low);
+  const s2=speedAtAngleForTWS(angle, high);
+  const t=(tws-low)/(high-low);
+  return s1+(s2-s1)*t;
+}
+
+function degToRad(d){return d*Math.PI/180;}
+function radToDeg(r){return r*180/Math.PI;}
+
+function drawArrow(ctx,cx,cy,angle,length,color,label,scale){
+  const rad=degToRad(angle), lx=length*scale*Math.sin(rad), ly=length*scale*Math.cos(rad);
+  const x2=cx+lx, y2=cy+ly;
+  ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(x2,y2); ctx.stroke();
+  const h=6; ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-h*Math.sin(rad-Math.PI/6), y2-h*Math.cos(rad-Math.PI/6));
+  ctx.lineTo(x2-h*Math.sin(rad+Math.PI/6), y2-h*Math.cos(rad+Math.PI/6));
+  ctx.closePath(); ctx.fill();
+  if(label){
+    ctx.fillStyle='#000'; ctx.font='12px sans-serif';
+    ctx.fillText(label,cx+lx/2+4,cy+ly/2-4);
+  }
+}
+
+function drawWindDiagram(){
+  const c=document.getElementById('windDiagram');
+  if(!c||!c.getContext) return;
+  const ctx=c.getContext('2d');
+  const tws=parseFloat(document.getElementById('inputTWS').value)||0;
+  const twa=parseFloat(document.getElementById('inputTWA').value)||0;
+  const bsp=getBoatSpeed(twa,tws);
+  const twAngle=180+twa;
+  const twx=tws*Math.sin(degToRad(twAngle));
+  const twy=tws*Math.cos(degToRad(twAngle));
+  const awx=twx;
+  const awy=twy-bsp;
+  const aws=Math.sqrt(awx*awx+awy*awy);
+  const awAngle=radToDeg(Math.atan2(awx, awy))+180;
+  ctx.clearRect(0,0,c.width,c.height);
+  const cx=c.width/2, cy=c.height/2;
+  const maxv=Math.max(tws,bsp,aws); const scale=(c.width/2-30)/(maxv||1);
+  ctx.fillStyle='#666'; ctx.beginPath();
+  ctx.moveTo(cx,cy-20); ctx.lineTo(cx-10,cy+20); ctx.lineTo(cx+10,cy+20); ctx.closePath(); ctx.fill();
+  drawArrow(ctx,cx,cy,0,bsp,'green',`BSP ${bsp.toFixed(1)}kt`,scale);
+  drawArrow(ctx,cx,cy,twAngle,tws,'blue',`TWS ${tws}kt`,scale);
+  drawArrow(ctx,cx,cy,awAngle,aws,'red',`AWS ${aws.toFixed(1)}kt`,scale);
+}
+
 document.getElementById('importFile').onchange = e=>{
   const f=e.target.files[0]; if(!f) return;
   const reader=new FileReader();
   reader.onload = ()=>{
     try {
       const data = JSON.parse(reader.result);
-      if(Array.isArray(data)){ polarData=data; renderTable(); plotPolar(); }
+      if(Array.isArray(data)){ polarData=data; renderTable(); plotPolar(); drawWindDiagram(); }
     } catch{}
   };
   reader.readAsText(f);
 };
 
 document.addEventListener('DOMContentLoaded',()=>{
-  renderTable(); plotPolar();
+  renderTable(); plotPolar(); drawWindDiagram();
   document.getElementById('btnPolar').onclick=plotPolar;
   document.getElementById('btnVMG').onclick=plotVMG;
   document.getElementById('btnInterp').onclick=interpolateEmpty;
   document.getElementById('btnExport').onclick=exportData;
+  document.getElementById('inputTWS').oninput=drawWindDiagram;
+  document.getElementById('inputTWA').oninput=drawWindDiagram;
 });
