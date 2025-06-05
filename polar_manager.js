@@ -188,19 +188,34 @@ function getBoatSpeed(angle, tws) {
 function degToRad(d){return d*Math.PI/180;}
 function radToDeg(r){return r*180/Math.PI;}
 
-function drawArrow(ctx,cx,cy,angle,length,color,label,scale){
-  const rad=degToRad(angle), lx=length*scale*Math.sin(rad), ly=length*scale*Math.cos(rad);
-  const x2=cx+lx, y2=cy+ly;
+function vecFromAngle(angle,len){
+  const rad=degToRad(angle);
+  return {x:len*Math.sin(rad), y:-len*Math.cos(rad)};
+}
+
+function angleFromVec(x,y){
+  const rad=Math.atan2(x,-y);
+  return (radToDeg(rad)+360)%360;
+}
+
+function drawArrow(ctx,cx,cy,angle,length,color,label,scale,toCenter){
+  const rad=degToRad(angle);
+  const dx=length*scale*Math.sin(rad);
+  const dy=-length*scale*Math.cos(rad);
+  const x1=toCenter?cx+dx:cx;
+  const y1=toCenter?cy+dy:cy;
+  const x2=toCenter?cx:cx+dx;
+  const y2=toCenter?cy:cy+dy;
   ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=2;
-  ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(x2,y2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
   const h=6; ctx.beginPath();
   ctx.moveTo(x2,y2);
-  ctx.lineTo(x2-h*Math.sin(rad-Math.PI/6), y2-h*Math.cos(rad-Math.PI/6));
-  ctx.lineTo(x2-h*Math.sin(rad+Math.PI/6), y2-h*Math.cos(rad+Math.PI/6));
+  ctx.lineTo(x2-h*Math.sin(rad-Math.PI/6), y2+h*Math.cos(rad-Math.PI/6));
+  ctx.lineTo(x2-h*Math.sin(rad+Math.PI/6), y2+h*Math.cos(rad+Math.PI/6));
   ctx.closePath(); ctx.fill();
   if(label){
     ctx.fillStyle='#000'; ctx.font='12px sans-serif';
-    ctx.fillText(label,cx+lx/2+4,cy+ly/2-4);
+    ctx.fillText(label,(x1+x2)/2+4,(y1+y2)/2-4);
   }
 }
 
@@ -211,21 +226,20 @@ function drawWindDiagram(){
   const tws=parseFloat(document.getElementById('inputTWS').value)||0;
   const twa=parseFloat(document.getElementById('inputTWA').value)||0;
   const bsp=getBoatSpeed(twa,tws);
-  const twAngle=180+twa;
-  const twx=tws*Math.sin(degToRad(twAngle));
-  const twy=tws*Math.cos(degToRad(twAngle));
-  const awx=twx;
-  const awy=twy-bsp;
+  const twVel=vecFromAngle(twa+180,tws);
+  const twAngle=twa;
+  const awx=twVel.x-vecFromAngle(0,bsp).x;
+  const awy=twVel.y-vecFromAngle(0,bsp).y;
   const aws=Math.sqrt(awx*awx+awy*awy);
-  const awAngle=radToDeg(Math.atan2(awx, awy))+180;
+  const awAngle=(angleFromVec(awx,awy)+180)%360;
   ctx.clearRect(0,0,c.width,c.height);
   const cx=c.width/2, cy=c.height/2;
   const maxv=Math.max(tws,bsp,aws); const scale=(c.width/2-30)/(maxv||1);
   ctx.fillStyle='#666'; ctx.beginPath();
   ctx.moveTo(cx,cy-20); ctx.lineTo(cx-10,cy+20); ctx.lineTo(cx+10,cy+20); ctx.closePath(); ctx.fill();
-  drawArrow(ctx,cx,cy,0,bsp,'green',`BSP ${bsp.toFixed(1)}kt`,scale);
-  drawArrow(ctx,cx,cy,twAngle,tws,'blue',`TWS ${tws}kt`,scale);
-  drawArrow(ctx,cx,cy,awAngle,aws,'red',`AWS ${aws.toFixed(1)}kt`,scale);
+  drawArrow(ctx,cx,cy,0,bsp,'green',`BSP ${bsp.toFixed(1)}kt`,scale,false);
+  drawArrow(ctx,cx,cy,twAngle,tws,'blue',`TWS ${tws}kt`,scale,true);
+  drawArrow(ctx,cx,cy,awAngle,aws,'red',`AWS ${aws.toFixed(1)}kt`,scale,true);
 }
 
 document.getElementById('importFile').onchange = e=>{

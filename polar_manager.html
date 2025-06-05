@@ -24,9 +24,13 @@
     <button id="btnExport">Export JSON</button>
     <input type="file" id="importFile" accept="application/json">
   </div>
-  <div style="margin-bottom:12px;">
-    TWS <input id="inputTWS" type="number" value="10" step="0.1" style="width:70px;">
-    TWA <input id="inputTWA" type="number" value="45" step="1" min="0" max="180" style="width:70px;">
+  <div id="windControls" style="margin-bottom:12px;">
+    <label>True Wind Speed
+      <input id="inputTWS" type="number" value="10" step="0.1" style="width:70px;">
+    </label>
+    <label style="margin-left:12px;">True Wind Angle
+      <input id="inputTWA" type="number" value="45" step="1" min="0" max="180" style="width:70px;">
+    </label>
   </div>
   <div id="errorMessage" class="error" style="display:none;"></div>
   <table id="dataTable"></table>
